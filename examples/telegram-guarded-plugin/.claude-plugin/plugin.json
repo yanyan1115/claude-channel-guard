@@ -1,0 +1,6 @@
+{
+  "name": "telegram",
+  "description": "Guarded Telegram channel wrapper for Claude Code.",
+  "version": "0.1.0",
+  "keywords": ["telegram", "messaging", "channel", "mcp", "guard"]
+}

@@ -1,0 +1,20 @@
+{
+  "mcpServers": {
+    "telegram": {
+      "command": "/usr/bin/env",
+      "args": [
+        "PYTHONPATH=/path/to/claude-channel-guard",
+        "CHANNEL_GUARD_DIR=/home/you/.claude/channel-guard",
+        "/path/to/claude-channel-guard/.venv/bin/python",
+        "-m",
+        "channel_guard.telegram_mcp_proxy",
+        "--upstream-dir",
+        "/home/you/.claude/plugins/cache/claude-plugins-official/telegram/<version>",
+        "--expected-server-sha256",
+        "<sha256-of-official-server.ts>",
+        "--state-dir",
+        "/home/you/.claude/channel-guard"
+      ]
+    }
+  }
+}

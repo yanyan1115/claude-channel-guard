@@ -1,0 +1,15 @@
+[Unit]
+Description=Claude Code Telegram Channel (guarded)
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+WorkingDirectory=/path/to/claude-channel-guard
+Environment=CHANNEL_GUARD_DIR=/home/claude/.claude/channel-guard
+ExecStart=/usr/bin/tmux -S /run/claude-telegram/tmux.sock new-session -A -s telegram '/path/to/claude --permission-mode auto --plugin-dir /home/claude/.claude/plugins/local/telegram-guarded --dangerously-load-development-channels plugin:telegram@inline'
+Restart=always
+RestartSec=5
+
+[Install]
+WantedBy=multi-user.target

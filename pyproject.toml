@@ -1,0 +1,30 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "claude-channel-guard"
+version = "0.1.0"
+description = "External-source guard for Claude Code Telegram channels and memory writes."
+readme = "README.md"
+requires-python = ">=3.10"
+license = { text = "MIT" }
+authors = [
+  { name = "Cora and collaborators" }
+]
+keywords = ["claude-code", "telegram", "mcp", "guard", "hooks", "memory"]
+classifiers = [
+  "Programming Language :: Python :: 3",
+  "License :: OSI Approved :: MIT License",
+  "Operating System :: POSIX :: Linux",
+  "Topic :: Security",
+]
+dependencies = []
+
+[project.scripts]
+telegram-channel-guard = "channel_guard.telegram_mcp_proxy:main"
+channel-guard-close-grants = "channel_guard.close_grants:main"
+channel-guard-memory-write = "channel_guard.memory_write_guard:main"
+
+[tool.setuptools]
+packages = ["channel_guard"]

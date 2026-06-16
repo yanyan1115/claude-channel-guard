@@ -1,0 +1,26 @@
+{
+  "hooks": {
+    "PreToolUse": [
+      {
+        "matcher": "mcp__.*",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash /path/to/claude-channel-guard/hooks/channel-guard-memory-write.sh"
+          }
+        ]
+      }
+    ],
+    "Stop": [
+      {
+        "matcher": "",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash /path/to/claude-channel-guard/hooks/channel-guard-close-grants.sh"
+          }
+        ]
+      }
+    ]
+  }
+}
