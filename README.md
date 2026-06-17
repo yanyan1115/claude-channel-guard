@@ -26,6 +26,7 @@ It is not yet suitable for:
 - Append-only hashed inbound ledger: stores hashes and metadata, not raw chat text.
 - SQLite grant state: tracks active grants, outbound count, character budget, burst window, and closed reasons.
 - `memory-write-guard`: a Claude Code `PreToolUse` hook for memory write tools. It allows grounded low-risk remembers, routes uncertain writes to review/pending, and denies ungrounded writes.
+- Recent memory intent lookback: if the user explicitly asked to remember something and a follow-up message arrives before Claude calls the memory tool, the guard can still use the recent real memory-intent inbound message as the memory source. Grounding checks still apply.
 - Stop hook race fix: `close_consumed()` plus `--consumed-only`, so a late Stop event from a previous turn cannot close a just-created grant for a new Telegram message.
 
 ## Security Model
@@ -147,6 +148,8 @@ Files:
 - `guard.log`: allow decisions.
 - `blocked.log`: deny decisions.
 - `memory-pending.log`: fallback pending queue when no memory review API is available.
+
+Memory writes also use `CHANNEL_GUARD_MEMORY_INTENT_LOOKBACK` (default `600` seconds) to find a recent real inbound message with explicit memory intent. This is not a broad time-window allowlist: low-risk writes still need content grounding, and high-impact writes still go to review.
 
 Logs should not contain token values, raw chat text, private keys, or chat IDs.
 

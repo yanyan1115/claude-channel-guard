@@ -73,6 +73,32 @@ class ChannelGuardTests(unittest.TestCase):
         self.assertTrue(decision.review)
         self.assertEqual(decision.reason, "no_explicit_memory_intent")
 
+    def test_memory_write_uses_recent_memory_intent_after_followup_message(self):
+        first = self.record_message("记一下：以后把这个助手叫 Helper。", message_id="100")
+        second = self.record_message("刚刚那件事也很重要。", message_id="101")
+
+        decision = self.state.allow_memory_write(
+            "memory_remember",
+            {"content": "用户希望把这个助手称为 Helper。"},
+        )
+
+        self.assertTrue(decision.allow)
+        self.assertEqual(decision.reason, "explicit_grounded_memory_intent")
+        self.assertEqual(decision.grant_id, first)
+        self.assertNotEqual(first, second)
+
+    def test_recent_memory_intent_still_reviews_ungrounded_content(self):
+        self.record_message("记一下：以后把这个助手叫 Helper。", message_id="100")
+        self.record_message("继续聊普通话题。", message_id="101")
+
+        decision = self.state.allow_memory_write(
+            "memory_remember",
+            {"content": "用户同意了完全不同的长期承诺。"},
+        )
+
+        self.assertFalse(decision.allow)
+        self.assertTrue(decision.review)
+
     def test_memory_write_reviews_ungrounded_extra_content(self):
         self.record_message("记一下：以后把这个助手叫 Helper。")
         decision = self.state.allow_memory_write(

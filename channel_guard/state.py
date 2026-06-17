@@ -21,6 +21,7 @@ DEFAULT_BURST_SECONDS = int(os.environ.get("CHANNEL_GUARD_BURST_SECONDS", "30"))
 DEFAULT_MAX_OUTBOUND = int(os.environ.get("CHANNEL_GUARD_MAX_OUTBOUND", "8"))
 DEFAULT_MAX_CHARS = int(os.environ.get("CHANNEL_GUARD_MAX_CHARS", "6000"))
 DEFAULT_GRANT_START_TTL = int(os.environ.get("CHANNEL_GUARD_GRANT_START_TTL", "600"))
+DEFAULT_MEMORY_INTENT_LOOKBACK = int(os.environ.get("CHANNEL_GUARD_MEMORY_INTENT_LOOKBACK", "600"))
 
 MEMORY_WRITE_TOOLS = {
     "memory_remember",
@@ -403,6 +404,30 @@ class ChannelGuardState:
             ).fetchone()
         return row
 
+    def _memory_source_grant(self, chat_id: Any | None = None) -> sqlite3.Row | None:
+        active = self._active_grant(chat_id)
+        if active and (int(active["memory_intent"]) or int(active["delete_intent"])):
+            return active
+
+        chat_hash = self.hash_value(chat_id) if chat_id not in (None, "") else None
+        params: list[Any] = [now_ts() - DEFAULT_MEMORY_INTENT_LOOKBACK]
+        where = "WHERE (i.memory_intent = 1 OR i.delete_intent = 1) AND i.created_at >= ?"
+        if chat_hash:
+            where += " AND i.chat_hash = ?"
+            params.append(chat_hash)
+        with closing(self._connect()) as db:
+            return db.execute(
+                f"""
+                SELECT g.*, i.memory_intent, i.delete_intent, i.token_hashes, i.risk_flags
+                FROM inbound_messages i
+                JOIN grants g ON g.grant_id = i.grant_id
+                {where}
+                ORDER BY i.created_at DESC
+                LIMIT 1
+                """,
+                params,
+            ).fetchone()
+
     def allow_telegram_outbound(self, tool_name: str, args: dict[str, Any]) -> GuardDecision:
         if self.get_health("upstream_status", "ok") != "ok":
             return GuardDecision(False, "upstream_hash_mismatch")
@@ -450,9 +475,12 @@ class ChannelGuardState:
     def allow_memory_write(self, tool_name: str, args: dict[str, Any]) -> GuardDecision:
         if self.get_health("upstream_status", "ok") != "ok":
             return GuardDecision(False, "upstream_hash_mismatch", review=True)
-        row = self._active_grant(args.get("chat_id"))
+        active_row = self._active_grant(args.get("chat_id"))
+        row = self._memory_source_grant(args.get("chat_id"))
         if not row:
-            return GuardDecision(False, "no_active_grant")
+            if active_row:
+                return GuardDecision(False, "no_explicit_memory_intent", active_row["grant_id"], review=True)
+            return GuardDecision(False, "no_memory_intent_grant")
         if tool_name in HIGH_IMPACT_MEMORY_TOOLS:
             return GuardDecision(False, "high_impact_memory_write_requires_review", row["grant_id"], review=True)
         if not int(row["memory_intent"]):

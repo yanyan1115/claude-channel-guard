@@ -31,5 +31,8 @@ Pure chat defaults:
 - `CHANNEL_GUARD_BURST_SECONDS=30`
 - `CHANNEL_GUARD_MAX_CHARS=6000`
 - `CHANNEL_GUARD_GRANT_START_TTL=600`
+- `CHANNEL_GUARD_MEMORY_INTENT_LOOKBACK=600`
 
 Increasing these values makes chat feel less constrained but increases the amount of output a single real inbound message can authorize.
+
+The memory intent lookback is different from Telegram outbound burst authorization. It only helps memory-write guard find a recent real inbound message where the user explicitly asked to remember/update/delete something. It does not skip grounding checks and does not auto-apply high-impact updates.
