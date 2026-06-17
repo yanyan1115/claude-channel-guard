@@ -65,11 +65,16 @@ def main(argv: list[str] | None = None) -> int:
         decision.reason,
         grant_id=decision.grant_id,
     )
+    queued_for_review = False
     if decision.review:
-        if not _enqueue_memoclover_review(suffix, tool_input, decision.reason, decision.grant_id):
+        queued_for_review = _enqueue_memoclover_review(suffix, tool_input, decision.reason, decision.grant_id)
+        if not queued_for_review:
             state.append_pending(suffix, tool_input, decision.reason, decision.grant_id)
+            queued_for_review = True
     if decision.allow:
         _hook_output("allow", decision.reason)
+    elif queued_for_review:
+        _hook_output("deny", f"queued_for_review:{decision.reason}")
     else:
         _hook_output("deny", decision.reason)
     return 0
@@ -77,4 +82,3 @@ def main(argv: list[str] | None = None) -> int:
 
 if __name__ == "__main__":
     raise SystemExit(main())
-

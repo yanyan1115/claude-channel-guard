@@ -36,3 +36,5 @@ Pure chat defaults:
 Increasing these values makes chat feel less constrained but increases the amount of output a single real inbound message can authorize.
 
 The memory intent lookback is different from Telegram outbound burst authorization. It only helps memory-write guard find a recent real inbound message where the user explicitly asked to remember/update/delete something. It does not skip grounding checks and does not auto-apply high-impact updates.
+
+Review-routed memory writes return `queued_for_review:<reason>` from the PreToolUse hook while still blocking the original write tool call. Treat that as "candidate captured for approval", not as an automatic memory update.

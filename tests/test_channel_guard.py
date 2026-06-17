@@ -1,11 +1,15 @@
-﻿import json
+import io
+import json
 import sys
 import tempfile
 import unittest
+from contextlib import redirect_stdout
 from pathlib import Path
+from unittest.mock import patch
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
+from channel_guard import memory_write_guard
 from channel_guard.state import DEFAULT_MAX_OUTBOUND, ChannelGuardState
 
 
@@ -98,6 +102,32 @@ class ChannelGuardTests(unittest.TestCase):
 
         self.assertFalse(decision.allow)
         self.assertTrue(decision.review)
+
+    def test_memory_write_hook_reports_review_queue_for_ungrounded_content(self):
+        self.record_message("记一下：以后把这个助手叫 Helper。", message_id="100")
+        self.record_message("继续聊普通话题。", message_id="101")
+        payload = {
+            "tool_name": "mcp__memoclover__memory_remember",
+            "tool_input": {"content": "用户希望把另一个工具称为 Workbench。"},
+        }
+        output = io.StringIO()
+
+        with (
+            patch.object(sys, "stdin", io.StringIO(json.dumps(payload, ensure_ascii=False))),
+            patch.object(memory_write_guard, "_enqueue_memoclover_review", return_value=False),
+            redirect_stdout(output),
+        ):
+            rc = memory_write_guard.main(["--state-dir", self.tmp.name])
+
+        self.assertEqual(rc, 0)
+        result = json.loads(output.getvalue())
+        hook_output = result["hookSpecificOutput"]
+        self.assertEqual(hook_output["permissionDecision"], "deny")
+        self.assertEqual(
+            hook_output["permissionDecisionReason"],
+            "queued_for_review:memory_content_not_grounded_in_inbound",
+        )
+        self.assertTrue(Path(self.tmp.name, "memory-pending.log").exists())
 
     def test_memory_write_reviews_ungrounded_extra_content(self):
         self.record_message("记一下：以后把这个助手叫 Helper。")

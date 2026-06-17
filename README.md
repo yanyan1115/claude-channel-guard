@@ -151,6 +151,8 @@ Files:
 
 Memory writes also use `CHANNEL_GUARD_MEMORY_INTENT_LOOKBACK` (default `600` seconds) to find a recent real inbound message with explicit memory intent. This is not a broad time-window allowlist: low-risk writes still need content grounding, and high-impact writes still go to review.
 
+When a memory write is routed to review, the hook still denies the original tool execution but reports `queued_for_review:<reason>` so the assistant knows the candidate was captured for human review rather than silently lost.
+
 Logs should not contain token values, raw chat text, private keys, or chat IDs.
 
 ## Tests
